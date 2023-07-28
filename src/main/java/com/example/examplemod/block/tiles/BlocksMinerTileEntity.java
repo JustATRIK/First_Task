@@ -35,19 +35,19 @@ import java.util.UUID;
 public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISidedInventory {
     public static final Capability<IEnergyStorage> ENERGY_HANDLER = CapabilityEnergy.ENERGY;
     final static int REAL_ENERGY_CONSUMING = 10;
-    int energyConsuming = 0;
+    public int energyConsuming = 0;
     public NonNullList<ItemStack> items = NonNullList.withSize(19, ItemStack.EMPTY);
-    boolean startedMining;
+    public float curBlockDamageMP = 0;
     public FakePlayer fakePlayer;
+    boolean startedMining;
     BlockPos targetBlockPos;
     BlockPos offest;
     EnumFacing enumFacing;
-    public float curBlockDamageMP = 0;
     private net.minecraftforge.common.capabilities.CapabilityDispatcher capabilities;
     private final ModEnergyStorage energyStorage = new ModEnergyStorage(20000, 200, REAL_ENERGY_CONSUMING) {
         @Override
         public void onEnergyChanged() {
-            ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, energy, curBlockDamageMP));
+            ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, energy, curBlockDamageMP, energyConsuming));
         }
     };
 
@@ -58,6 +58,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     @Override
     public void update() {
         if (world instanceof WorldServer) {
+            energyStorage.receiveEnergy(100, false);
             if (energyStorage.getEnergyStored() < energyConsuming){
                 energyConsuming = 0;
                 return;
@@ -81,7 +82,6 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
                 IBlockState targetBlock = world.getBlockState(targetBlockPos);
                 if (targetBlock.getBlock() == Blocks.AIR) {
                     curBlockDamageMP = 0;
-                    energyConsuming = 0;
                     world.sendBlockBreakProgress(fakePlayer.getEntityId(), targetBlockPos, (int) (curBlockDamageMP * 10.0F) - 1);
                     return;
                 }
@@ -93,7 +93,9 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
                     fakePlayer.connection.sendPacket(new CPacketPlayerDigging(CPacketPlayerDigging.Action.STOP_DESTROY_BLOCK, targetBlockPos, EnumFacing.UP));
                     fakePlayer.interactionManager.tryHarvestBlock(targetBlockPos);
                     startedMining = false;
-                    curBlockDamageMP = 0.0F;
+                    curBlockDamageMP = 0;
+                    energyConsuming = 0;
+                    ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, getEnergyStorage().getEnergyStored(), curBlockDamageMP, energyConsuming));
                 }
                 energyConsuming = REAL_ENERGY_CONSUMING;
                 world.sendBlockBreakProgress(fakePlayer.getEntityId(), targetBlockPos, (int) (curBlockDamageMP * 10.0F) - 1);
@@ -136,6 +138,11 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
         super.readFromNBT(compound);
         ItemStackHelper.loadAllItems(compound, items);
         energyStorage.setEnergy(compound.getInteger("blocks_destroyer.energy"));
+    }
+
+    @Override
+    public void deserializeNBT(NBTTagCompound nbt){
+        super.deserializeNBT(nbt);
     }
 
     @Override
@@ -206,7 +213,8 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
 
     @Override
     public void openInventory(final EntityPlayer player) {
-        ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, energyStorage.getEnergyStored(), curBlockDamageMP));
+        if (!world.isRemote) ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, getEnergyStorage().getEnergyStored(), curBlockDamageMP, energyConsuming));
+        System.out.println("this.getEnergyStorage().getEnergyStored()");
     }
 
     @Override

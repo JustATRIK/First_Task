@@ -1,5 +1,6 @@
 package com.example.examplemod.gui;
 
+import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -12,7 +13,6 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 @SideOnly(Side.CLIENT)
 public class BlocksMinerGui extends GuiContainer {
@@ -60,7 +60,7 @@ public class BlocksMinerGui extends GuiContainer {
             net.minecraftforge.fml.client.config.GuiUtils.preItemToolTip(ItemStack.EMPTY);
             ArrayList<String> lines = new ArrayList<String>();
             lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_storing").getFormattedText() + " " + tileEntity.getEnergyStorage().getEnergyStored() + "FE");
-            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_consuming").getFormattedText() + " " + tileEntity.getMaxExtract() + "FE/t");
+            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_consuming").getFormattedText() + " " + tileEntity.energyConsuming + "FE/t");
             drawHoveringText(lines, pMouseX, pMouseY, (font == null ? fontRenderer : font));
             net.minecraftforge.fml.client.config.GuiUtils.postItemToolTip();
         }

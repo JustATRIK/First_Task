@@ -11,7 +11,7 @@ public class CommonProxy
 {
     public void preInit(FMLPreInitializationEvent event) {
         ModBlocks.register();
-        ExampleMod.NETWORK.registerMessage(new EnergyAndProgressSyncPacket(), EnergyAndProgressSyncPacket.class, 1, Side.CLIENT);
+        ExampleMod.NETWORK.registerMessage(new EnergyAndProgressSyncPacket(), EnergyAndProgressSyncPacket.class, 0, Side.CLIENT);
     }
 
     public void init(FMLInitializationEvent event) {
