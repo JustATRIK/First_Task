@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=down":  { "model": "examplemod:blocks_miner_vertical", "x": 180 },
+    "facing=up":    { "model": "examplemod:blocks_miner_vertical" },
+    "facing=north": { "model": "examplemod:blocks_miner" },
+    "facing=south": { "model": "examplemod:blocks_miner", "y": 180 },
+    "facing=west":  { "model": "examplemod:blocks_miner", "y": 270 },
+    "facing=east":  { "model": "examplemod:blocks_miner", "y": 90 }
+  }
+}

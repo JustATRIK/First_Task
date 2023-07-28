@@ -1,0 +1,5 @@
+examplemod.blocks_miner.gui.energy_consuming=Consuming:
+examplemod.blocks_miner.gui.energy_storing=Stored:
+examplemod.blocks_miner.gui.progress=Progress:
+examplemod.blocks_miner.gui.name=Blocks miner
+tile.examplemod.blocks_miner.name=Blocks miner

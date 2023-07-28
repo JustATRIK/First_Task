@@ -1,0 +1,5 @@
+examplemod.blocks_miner.gui.energy_consuming=Потребление:
+examplemod.blocks_miner.gui.energy_storing=Хранится:
+examplemod.blocks_miner.gui.progress=Прогресс:
+examplemod.blocks_miner.gui.name=Разрушитель блоков
+tile.examplemod.blocks_miner.name=Разрушитель блоков
