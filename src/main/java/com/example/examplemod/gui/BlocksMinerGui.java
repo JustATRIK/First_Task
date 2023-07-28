@@ -50,8 +50,8 @@ public class BlocksMinerGui extends GuiContainer {
     }
 
     protected void renderLabels() {
-        mc.fontRenderer.drawStringWithShadow(tileEntity.getDisplayName().getFormattedText(), 8 + x, y + 5, 4210752);
-        mc.fontRenderer.drawStringWithShadow(mc.player.inventory.getDisplayName().getFormattedText(), 8 + x, y + 73, 4210752);
+        mc.fontRenderer.drawString(tileEntity.getDisplayName().getFormattedText(), 8 + x, y + 6, 10526880);
+        mc.fontRenderer.drawString(mc.player.inventory.getDisplayName().getFormattedText(), 8 + x, y + 73, 10526880);
     }
 
     private void renderEnergyAreaTooltips(int pMouseX, int pMouseY, int x, int y) {
