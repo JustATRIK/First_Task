@@ -58,7 +58,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     private int clientStoredEnergy = -1;
     private float clientCurBlockDamageMP = -1;
     private IBlockState targetBlock;
-    private BlockPos freePosition = new BlockPos(0, 0, 0);
+    private BlockPos freePosition;
 
     public BlocksMinerTileEntity() {
         capabilities = net.minecraftforge.event.ForgeEventFactory.gatherCapabilities(this);
@@ -78,7 +78,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             fakePlayer = BlocksMinerFakePlayer.initFakePlayer(DimensionManager.getWorld(2), UUID.randomUUID(), "blocks_miner", world.provider.getDimension(), pos);
             //Если получилось создать игрока
             if (fakePlayer != null) {
-                freePosition = BlocksMinerUtils.getValidPosForSpawn(pos, (WorldServer) fakePlayer.get().world);
+                if (freePosition == null) freePosition = BlocksMinerUtils.getValidPosForSpawn(pos, (WorldServer) fakePlayer.get().world);
                 fakePlayer.get().setPosition(freePosition.getX(), freePosition.getY(), freePosition.getZ());
             }
             return;
