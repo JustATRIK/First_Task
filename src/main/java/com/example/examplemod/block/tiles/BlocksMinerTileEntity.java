@@ -101,7 +101,6 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             //Ставим блок в измерении
             placeBlock();
         }
-
         targetBlock = fakePlayer.get().world.getBlockState(freePosition);
         //Добываем блок
         if ((curBlockDamageMP += targetBlock.getPlayerRelativeBlockHardness(fakePlayer.get(), fakePlayer.get().world, freePosition) * 5) >= 1.0F) {
