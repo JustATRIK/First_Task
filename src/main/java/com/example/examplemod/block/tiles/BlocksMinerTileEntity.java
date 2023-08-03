@@ -78,7 +78,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             fakePlayer = BlocksMinerFakePlayer.initFakePlayer(DimensionManager.getWorld(2), UUID.randomUUID(), "blocks_miner", world.provider.getDimension(), pos);
             //Если получилось создать игрока
             if (fakePlayer != null) {
-                if (DimensionManager.getWorld(2).getBlockState(freePosition).getBlock() != Blocks.AIR) freePosition = BlocksMinerUtils.getValidPosForSpawn(pos, (WorldServer) fakePlayer.get().world);
+                freePosition = BlocksMinerUtils.getValidPosForSpawn(pos, (WorldServer) fakePlayer.get().world);
                 fakePlayer.get().setPosition(freePosition.getX(), freePosition.getY(), freePosition.getZ());
             }
             return;
@@ -102,6 +102,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             placeBlock();
         }
         targetBlock = fakePlayer.get().world.getBlockState(freePosition);
+
         //Добываем блок
         if ((curBlockDamageMP += targetBlock.getPlayerRelativeBlockHardness(fakePlayer.get(), fakePlayer.get().world, freePosition) * 5) >= 1.0F) {
             startedMining = false;
@@ -386,12 +387,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     private boolean canCastItemToBlock(ItemStack itemStack){
-        try {
-            ItemBlock i = (ItemBlock) itemStack.getItem();
-            return true;
-        } catch (Exception e){
-            return false;
-        }
+        return itemStack.getItem() instanceof ItemBlock;
     }
 
     @Override
@@ -405,9 +401,10 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     private void placeBlock(){
-        setFakePlayerMainHandItem(items.get(targetSlot));
-        fakePlayer.get().interactionManager.processRightClickBlock(fakePlayer.get(), fakePlayer.get().world, items.get(targetSlot), EnumHand.MAIN_HAND, freePosition, EnumFacing.UP, freePosition.getX(), freePosition.getY() - 1, freePosition.getZ());
-        setFakePlayerMainHandItem(items.get(0));
+        fakePlayer.get().world.setBlockState(freePosition, ((ItemBlock)items.get(targetSlot).getItem()).getBlock().getStateForPlacement(fakePlayer.get().world, freePosition, EnumFacing.DOWN, freePosition.getX(), freePosition.getY(), freePosition.getZ(), 0, fakePlayer.get()));
+        ItemStack itemStack = getStackInSlot(targetSlot);
+        itemStack.setCount(itemStack.getCount() - 1);
+        setInventorySlotContents(targetSlot, itemStack);
     }
 }
 
