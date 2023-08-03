@@ -1,6 +1,8 @@
 package com.example.examplemod.gui;
 
+import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
+import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.IInventory;
@@ -8,7 +10,10 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
 public class BlocksMinerContainer extends Container {
+    BlocksMinerTileEntity tileEntity;
+
     public BlocksMinerContainer(EntityPlayer player, BlocksMinerTileEntity tileEntity) {
+        this.tileEntity = tileEntity;
         this.addSlotToContainer(new Slot(tileEntity, 0, 18 * 4 + 18 * 3 - 3, 18 * 2));
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 6; ++j) {
@@ -71,5 +76,16 @@ public class BlocksMinerContainer extends Container {
         return itemstack;
     }
 
-
+    @Override
+    public void detectAndSendChanges() {
+        super.detectAndSendChanges();
+        if (!tileEntity.getWorld().isRemote) {
+            if (tileEntity.getStoredEnergy() != tileEntity.getClientIntData(0) || tileEntity.energyConsuming != tileEntity.getClientIntData(1) || tileEntity.curBlockDamageMP != tileEntity.getClientFloatData(0)) {
+                tileEntity.setClientIntData(0, tileEntity.getStoredEnergy());
+                tileEntity.setClientIntData(1, tileEntity.energyConsuming);
+                tileEntity.setClientFloatData(0, tileEntity.curBlockDamageMP);
+                ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming));
+            }
+        }
+    }
 }
