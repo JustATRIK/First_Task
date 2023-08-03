@@ -1,6 +1,5 @@
 package com.example.examplemod.gui;
 
-import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -18,13 +17,11 @@ import java.util.ArrayList;
 public class BlocksMinerGui extends GuiContainer {
     public static final ResourceLocation INVENTORY_BACKGROUND = new ResourceLocation("examplemod:textures/gui/blocks_destroyer.png");
     public BlocksMinerTileEntity tileEntity;
-    public float progress;
     int x, y;
 
     public BlocksMinerGui(Container inventorySlotsIn, BlocksMinerTileEntity tileEntity) {
         super(inventorySlotsIn);
         this.tileEntity = tileEntity;
-        this.progress = tileEntity.curBlockDamageMP;
     }
 
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
@@ -45,8 +42,8 @@ public class BlocksMinerGui extends GuiContainer {
         int i = this.guiLeft;
         int j = this.guiTop;
         drawTexturedModalRect(i, j, 0, 0, this.xSize, this.ySize);
-        drawTexturedModalRect(x + 157, y + 18, 188, 1, 10, (52 - tileEntity.getEnergyStorage().getEnergyStored() / 385));
-        drawTexturedModalRect(x + 147, y + 18, 182, 1, 5, (int) (52 - 52 * tileEntity.curBlockDamageMP));
+        drawTexturedModalRect(x + 157, y + 18, 188, 1, 10, (52 - tileEntity.getClientIntData(0) / 380));
+        drawTexturedModalRect(x + 147, y + 18, 182, 1, 5, (int) (52 - 52 * tileEntity.getClientFloatData(0)));
     }
 
     protected void renderLabels() {
@@ -59,8 +56,8 @@ public class BlocksMinerGui extends GuiContainer {
             FontRenderer font = mc.fontRenderer;
             net.minecraftforge.fml.client.config.GuiUtils.preItemToolTip(ItemStack.EMPTY);
             ArrayList<String> lines = new ArrayList<String>();
-            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_storing").getFormattedText() + " " + tileEntity.getEnergyStorage().getEnergyStored() + "FE");
-            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_consuming").getFormattedText() + " " + tileEntity.energyConsuming + "FE/t");
+            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_storing").getFormattedText() + " " + tileEntity.getClientIntData(0) + "FE");
+            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.energy_consuming").getFormattedText() + " " + tileEntity.getClientIntData(1) + "FE/t");
             drawHoveringText(lines, pMouseX, pMouseY, (font == null ? fontRenderer : font));
             net.minecraftforge.fml.client.config.GuiUtils.postItemToolTip();
         }
@@ -71,7 +68,7 @@ public class BlocksMinerGui extends GuiContainer {
             FontRenderer font = mc.fontRenderer;
             net.minecraftforge.fml.client.config.GuiUtils.preItemToolTip(ItemStack.EMPTY);
             ArrayList<String> lines = new ArrayList<String>();
-            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.progress").getFormattedText() + " " + (int)(tileEntity.curBlockDamageMP * 100) + "%");
+            lines.add(new TextComponentTranslation("examplemod.blocks_miner.gui.progress").getFormattedText() + " " + (int)(tileEntity.getClientFloatData(0) * 100) + "%");
             drawHoveringText(lines, pMouseX, pMouseY, (font == null ? fontRenderer : font));
             net.minecraftforge.fml.client.config.GuiUtils.postItemToolTip();
         }
