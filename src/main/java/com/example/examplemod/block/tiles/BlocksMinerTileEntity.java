@@ -1,16 +1,24 @@
 package com.example.examplemod.block.tiles;
 
-import com.example.examplemod.ExampleMod;
+import com.example.examplemod.dimensions.BlocksMinerVoidDimension;
+import com.example.examplemod.dimensions.ModDimensions;
+import com.example.examplemod.gui.BlocksMinerContainer;
+import com.example.examplemod.gui.BlocksMinerGui;
 import com.example.examplemod.utils.BlocksMinerFakePlayer;
+import com.example.examplemod.utils.BlocksMinerUtils;
+import com.example.examplemod.utils.IGuiTile;
 import com.example.examplemod.utils.energy.ModEnergyStorage;
-import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockDirectional;
+import net.minecraft.block.BlockDropper;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.inventory.ItemStackHelper;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.play.client.CPacketPlayerDigging;
@@ -18,38 +26,39 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
+import net.minecraft.world.storage.ISaveHandler;
+import net.minecraft.world.storage.WorldInfo;
+import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.EnergyStorage;
-import net.minecraftforge.energy.IEnergyStorage;
 import org.lwjgl.Sys;
 
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.UUID;
 
-public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISidedInventory {
-    public static final Capability<IEnergyStorage> ENERGY_HANDLER = CapabilityEnergy.ENERGY;
+public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISidedInventory, IGuiTile {
+    //Публичные поля
     final static int REAL_ENERGY_CONSUMING = 10;
     public int energyConsuming = 0;
     public NonNullList<ItemStack> items = NonNullList.withSize(19, ItemStack.EMPTY);
     public float curBlockDamageMP = 0;
-    public FakePlayer fakePlayer;
-    boolean startedMining;
-    BlockPos targetBlockPos;
-    BlockPos offest;
-    EnumFacing enumFacing;
-    private net.minecraftforge.common.capabilities.CapabilityDispatcher capabilities;
-    private final ModEnergyStorage energyStorage = new ModEnergyStorage(20000, 200, REAL_ENERGY_CONSUMING) {
-        @Override
-        public void onEnergyChanged() {
-            ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, energy, curBlockDamageMP, energyConsuming));
-        }
-    };
+    public WeakReference<BlocksMinerFakePlayer> fakePlayer;
+    //Приватные поля
+    private final net.minecraftforge.common.capabilities.CapabilityDispatcher capabilities;
+    private final ModEnergyStorage energyStorage = new ModEnergyStorage(20000, 200, REAL_ENERGY_CONSUMING);
+    private boolean startedMining;
+    private int targetSlot;
+    private int clientEnergyConsuming = -1;
+    private int clientStoredEnergy = -1;
+    private float clientCurBlockDamageMP = -1;
+    private IBlockState targetBlock;
+    private BlockPos freePosition = new BlockPos(0, 0, 0);
 
     public BlocksMinerTileEntity() {
         capabilities = net.minecraftforge.event.ForgeEventFactory.gatherCapabilities(this);
@@ -57,79 +66,78 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
 
     @Override
     public void update() {
-        if (world instanceof WorldServer) {
-            energyStorage.receiveEnergy(100, false);
-            if (energyStorage.getEnergyStored() < energyConsuming){
-                energyConsuming = 0;
-                return;
-            }
-            if (enumFacing != world.getBlockState(pos).getValue(BlockDirectional.FACING)) {
-                enumFacing = world.getBlockState(pos).getValue(BlockDirectional.FACING);
-                if (enumFacing == EnumFacing.UP) offest = new BlockPos(0, 1, 0);
-                else if (enumFacing == EnumFacing.DOWN) offest = new BlockPos(0, -1, 0);
-                else if (enumFacing == EnumFacing.NORTH) offest = new BlockPos(0, 0, -1);
-                else if (enumFacing == EnumFacing.SOUTH) offest = new BlockPos(0, 0, 1);
-                else if (enumFacing == EnumFacing.WEST) offest = new BlockPos(-1, 0, 0);
-                else if (enumFacing == EnumFacing.EAST) offest = new BlockPos(1, 0, 0);
-            }
-            if (fakePlayer == null) {
-                fakePlayer = BlocksMinerFakePlayer.initFakePlayer((WorldServer) world, UUID.randomUUID(), "blocks_miner");
-                fakePlayer.setPosition(pos.getX(), pos.getY(), pos.getZ());
-                setFakePlayerMainHandItem(items.get(0));
-            }
-            else {
-                targetBlockPos = pos.add(offest);
-                IBlockState targetBlock = world.getBlockState(targetBlockPos);
-                if (targetBlock.getBlock() == Blocks.AIR) {
-                    curBlockDamageMP = 0;
-                    world.sendBlockBreakProgress(fakePlayer.getEntityId(), targetBlockPos, (int) (curBlockDamageMP * 10.0F) - 1);
-                    return;
-                }
-                if (!startedMining) {
-                    fakePlayer.connection.sendPacket(new CPacketPlayerDigging(CPacketPlayerDigging.Action.START_DESTROY_BLOCK, new BlockPos(pos.getX(), pos.getY() + 1, pos.getZ()), EnumFacing.DOWN));
-                    startedMining = true;
-                }
-                if ((curBlockDamageMP += targetBlock.getPlayerRelativeBlockHardness(fakePlayer, world, targetBlockPos) * 5) >= 1.0F) {
-                    fakePlayer.connection.sendPacket(new CPacketPlayerDigging(CPacketPlayerDigging.Action.STOP_DESTROY_BLOCK, targetBlockPos, EnumFacing.UP));
-                    fakePlayer.interactionManager.tryHarvestBlock(targetBlockPos);
-                    startedMining = false;
-                    curBlockDamageMP = 0;
-                    energyConsuming = 0;
-                    ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, getEnergyStorage().getEnergyStored(), curBlockDamageMP, energyConsuming));
-                }
-                energyConsuming = REAL_ENERGY_CONSUMING;
-                world.sendBlockBreakProgress(fakePlayer.getEntityId(), targetBlockPos, (int) (curBlockDamageMP * 10.0F) - 1);
-                getEnergyStorage().extractEnergy(energyConsuming, false);
-            }
+        if (!(world instanceof WorldServer)) return;
+        energyStorage.receiveEnergy(1000, false);
+        //Ретерн, если нехвтает энергии для копания
+        if (getStoredEnergy() < energyConsuming) {
+            energyConsuming = 0;
+            return;
         }
+        //Создать фейк-плейера, если его еще нет
+        if (fakePlayer == null) {
+            fakePlayer = BlocksMinerFakePlayer.initFakePlayer(DimensionManager.getWorld(2), UUID.randomUUID(), "blocks_miner", world.provider.getDimension(), pos);
+            //Если получилось создать игрока
+            if (fakePlayer != null) {
+                if (DimensionManager.getWorld(2).getBlockState(freePosition).getBlock() != Blocks.AIR) freePosition = BlocksMinerUtils.getValidPosForSpawn(pos, (WorldServer) fakePlayer.get().world);
+                fakePlayer.get().setPosition(freePosition.getX(), freePosition.getY(), freePosition.getZ());
+            }
+            return;
+        }
+        else if (freePosition != fakePlayer.get().getPosition()){
+            freePosition = fakePlayer.get().getPosition();
+        }
+        //Ретерн, если нет блоков для копания
+        if (getFirstFullStackInRange(1, 7) == -1 && fakePlayer.get().world.getBlockState(freePosition).getBlock() == Blocks.AIR) {
+            curBlockDamageMP = 0;
+            energyConsuming = 0;
+            return;
+        }
+        //Настраиваем нужный слот
+        if (!startedMining) {
+            targetSlot = getFirstFullStackInRangeAsBlock(1, 7);
+            startedMining = true;
+            //Ставим блок в измерении
+            placeBlock();
+        }
+        targetBlock = fakePlayer.get().world.getBlockState(freePosition);
+        //Добываем блок
+        if ((curBlockDamageMP += targetBlock.getPlayerRelativeBlockHardness(fakePlayer.get(), fakePlayer.get().world, freePosition) * 5) >= 1.0F) {
+            startedMining = false;
+            curBlockDamageMP = 0;
+            energyConsuming = 0;
+            fakePlayer.get().interactionManager.tryHarvestBlock(freePosition);
+            return;
+        }
+        energyConsuming = REAL_ENERGY_CONSUMING;
+        energyStorage.extractEnergy(energyConsuming, false);
     }
 
     @Override
     @Nullable
     public <T> T getCapability(net.minecraftforge.common.capabilities.Capability<T> capability, @Nullable net.minecraft.util.EnumFacing facing) {
-        if (capability == CapabilityEnergy.ENERGY && facing != enumFacing){
-            return ENERGY_HANDLER.cast(energyStorage);
+        if (capability == CapabilityEnergy.ENERGY){
+            return CapabilityEnergy.ENERGY.cast(energyStorage);
         }
         return capabilities == null ? null : capabilities.getCapability(capability, facing);
     }
 
     @Override
     public boolean hasCapability(Capability<?> capability, EnumFacing facing) {
-        if (capability == CapabilityEnergy.ENERGY && facing != enumFacing) {
+        if (capability == CapabilityEnergy.ENERGY) {
             return true;
         }
         return super.hasCapability(capability, facing);
     }
 
     private void setFakePlayerMainHandItem(ItemStack itemStack) {
-        fakePlayer.setHeldItem(EnumHand.MAIN_HAND, itemStack);
+        fakePlayer.get().setHeldItem(EnumHand.MAIN_HAND, itemStack);
     }
 
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound compound) {
         super.writeToNBT(compound);
         compound = ItemStackHelper.saveAllItems(compound, items);
-        compound.setInteger("blocks_destroyer.energy", energyStorage.getEnergyStored());
+        compound.setInteger("energy", energyStorage.getEnergyStored());
         return compound;
     }
 
@@ -137,12 +145,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     public void readFromNBT(NBTTagCompound compound) {
         super.readFromNBT(compound);
         ItemStackHelper.loadAllItems(compound, items);
-        energyStorage.setEnergy(compound.getInteger("blocks_destroyer.energy"));
-    }
-
-    @Override
-    public void deserializeNBT(NBTTagCompound nbt){
-        super.deserializeNBT(nbt);
+        energyStorage.setEnergy(compound.getInteger("energy"));
     }
 
     @Override
@@ -213,8 +216,6 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
 
     @Override
     public void openInventory(final EntityPlayer player) {
-        if (!world.isRemote) ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(pos, getEnergyStorage().getEnergyStored(), curBlockDamageMP, energyConsuming));
-        System.out.println("this.getEnergyStorage().getEnergyStored()");
     }
 
     @Override
@@ -265,9 +266,13 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     public void addItemStackToInventory(ItemStack itemStackIn) {
+        addItemStackToInventoryInRange(itemStackIn, 1, items.size());
+    }
+
+    public void addItemStackToInventoryInRange(ItemStack itemStackIn, int startIndex, int endIndex) {
         int toDrop = 0;
         boolean flag = false;
-        for (int i = 1; i < items.size(); i++) {
+        for (int i = startIndex; i < endIndex; i++) {
             ItemStack itemStack = items.get(i);
             if (canMergeStacks(itemStack, itemStackIn)) {
                 toDrop = Math.max(itemStack.getCount() + itemStackIn.getCount() - 64, 0);
@@ -281,7 +286,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             toDrop = itemStackIn.getCount();
         }
         if (toDrop > 0) {
-            int firstEmptyStack = getFirstEmptyStack();
+            int firstEmptyStack = getFirstEmptyStackInRange(startIndex, endIndex);
             if (firstEmptyStack != -1) {
                 setInventorySlotContents(firstEmptyStack, itemStackIn);
             }
@@ -292,8 +297,34 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     public int getFirstEmptyStack() {
-        for (int i = 1; i < items.size(); i++) {
+        return getFirstFullStackInRange(1, items.size());
+    }
+
+    public int getFirstFullStackInRangeAsBlock(int startIndex, int endIndex) {
+        for (int i = startIndex; i < endIndex; i++) {
+            if (!items.get(i).isEmpty() && canCastItemToBlock(items.get(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public int getFirstEmptyStackInRange(int startIndex, int endIndex) {
+        for (int i = startIndex; i < endIndex; i++) {
             if (items.get(i).isEmpty()) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public int getFirstFullStack() {
+        return getFirstFullStackInRange(1, items.size());
+    }
+
+    public int getFirstFullStackInRange(int startIndex, int endIndex) {
+        for (int i = startIndex; i < endIndex; i++) {
+            if (!items.get(i).isEmpty()) {
                 return i;
             }
         }
@@ -316,8 +347,66 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
         return this.energyStorage;
     }
 
-    public int getMaxExtract(){
+    public int getEnergyConsuming(){
         return this.energyConsuming;
     }
+
+    public int getStoredEnergy(){
+        return this.energyStorage.getEnergyStored();
+    }
+
+    public int getClientIntData(int ID){
+        switch (ID){
+            case 0: return this.clientStoredEnergy;
+            case 1: return this.clientEnergyConsuming;
+        }
+        return -1;
+    }
+
+    public void setClientIntData(int ID, int value){
+        switch (ID){
+            case 0: this.clientStoredEnergy = value;
+            case 1: this.clientEnergyConsuming = value;
+        }
+    }
+
+    public float getClientFloatData(int ID){
+        switch (ID){
+            case 0: return this.clientCurBlockDamageMP;
+        }
+        return -1;
+    }
+
+    public void setClientFloatData(int ID, float value){
+        switch (ID){
+            case 0: this.clientCurBlockDamageMP = value;
+        }
+    }
+
+    private boolean canCastItemToBlock(ItemStack itemStack){
+        try {
+            ItemBlock i = (ItemBlock) itemStack.getItem();
+            return true;
+        } catch (Exception e){
+            return false;
+        }
+    }
+
+    @Override
+    public Container createContainer(EntityPlayer player) {
+        return new BlocksMinerContainer(player, this);
+    }
+
+    @Override
+    public GuiContainer createGui(EntityPlayer player) {
+        return new BlocksMinerGui(new BlocksMinerContainer(player, this), this);
+    }
+
+    private void placeBlock(){
+        setFakePlayerMainHandItem(items.get(targetSlot));
+        fakePlayer.get().interactionManager.processRightClickBlock(fakePlayer.get(), fakePlayer.get().world, items.get(targetSlot), EnumHand.MAIN_HAND, freePosition, EnumFacing.UP, freePosition.getX(), freePosition.getY() - 1, freePosition.getZ());
+        setFakePlayerMainHandItem(items.get(0));
+    }
 }
+
 
