@@ -96,9 +96,12 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
         if (!startedMining) {
             targetSlot = getFirstFullStackInRangeAsBlock(1, 7);
             startedMining = true;
+            if (targetSlot == -1) return;
+            if (!canCastItemToBlock(getStackInSlot(targetSlot))) return;
             //Ставим блок в измерении
             placeBlock();
         }
+
         targetBlock = fakePlayer.get().world.getBlockState(freePosition);
         //Добываем блок
         if ((curBlockDamageMP += targetBlock.getPlayerRelativeBlockHardness(fakePlayer.get(), fakePlayer.get().world, freePosition) * 5) >= 1.0F) {
