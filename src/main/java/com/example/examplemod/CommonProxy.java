@@ -1,6 +1,7 @@
 package com.example.examplemod;
 
 import com.example.examplemod.block.ModBlocks;
+import com.example.examplemod.dimensions.ModDimensions;
 import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -12,6 +13,7 @@ public class CommonProxy
     public void preInit(FMLPreInitializationEvent event) {
         ModBlocks.register();
         ExampleMod.NETWORK.registerMessage(new EnergyAndProgressSyncPacket(), EnergyAndProgressSyncPacket.class, 0, Side.CLIENT);
+        ModDimensions.registerDimensions();
     }
 
     public void init(FMLInitializationEvent event) {
