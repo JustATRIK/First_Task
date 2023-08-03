@@ -1,7 +1,6 @@
 package com.example.examplemod.utils.packets;
 
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
-import com.example.examplemod.gui.BlocksMinerGui;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.tileentity.TileEntity;
@@ -52,10 +51,9 @@ public class EnergyAndProgressSyncPacket implements IMessage, IMessageHandler<En
         BlockPos blockPos = new BlockPos(message.x, message.y, message.z);
         TileEntity tileEntity = Minecraft.getMinecraft().world.getTileEntity(blockPos);
         if (tileEntity instanceof BlocksMinerTileEntity){
-            ((BlocksMinerTileEntity) tileEntity).setEnergyLevel(message.energy);
-            ((BlocksMinerTileEntity) tileEntity).curBlockDamageMP = message.progress;
-            ((BlocksMinerTileEntity) tileEntity).energyConsuming = message.energyConsuming;
-            System.out.println(message.energy);
+            ((BlocksMinerTileEntity) tileEntity).setClientIntData(0, message.energy);
+            ((BlocksMinerTileEntity) tileEntity).setClientIntData(1, message.energyConsuming);
+            ((BlocksMinerTileEntity) tileEntity).setClientFloatData(0, message.progress);
         }
         return null;
     }
