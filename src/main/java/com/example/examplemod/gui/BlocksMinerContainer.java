@@ -10,14 +10,26 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
 public class BlocksMinerContainer extends Container {
+
     BlocksMinerTileEntity tileEntity;
 
     public BlocksMinerContainer(EntityPlayer player, BlocksMinerTileEntity tileEntity) {
         this.tileEntity = tileEntity;
-        this.addSlotToContainer(new Slot(tileEntity, 0, 18 * 4 + 18 * 3 - 3, 18 * 2));
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 6; ++j) {
-                this.addSlotToContainer(new Slot(tileEntity, i * 6 + 1 + j , j * 18 + 8, i * 18 + 18));
+        this.addSlotToContainer(new Slot(tileEntity, 0, 123, 38)); //1) index 2) xPos 3) yPos
+        //слоты для входа
+        for (int column = 0; column < 6; column++) {
+            int index = 1 + column;
+            int xPos = column * 18 + 8;
+            int yPos = 16;
+            this.addSlotToContainer(new Slot(tileEntity, index, xPos, yPos));
+        }
+        //слоты для выхода
+        for (int row = 1; row < 3; row++) {
+            for (int column = 0; column < 6; column++) {
+                int index = row * 6 + 1 + column;
+                int xPos = column * 18 + 8;
+                int yPos = row * 18 + 20;
+                this.addSlotToContainer(new Slot(tileEntity, index, xPos, yPos));
             }
         }
         initPlayerInventory(player);
@@ -30,35 +42,38 @@ public class BlocksMinerContainer extends Container {
 
     private void initPlayerInventory(EntityPlayer player) {
         IInventory playerInventory = player.inventory;
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.addSlotToContainer(new Slot(playerInventory, j + i * 9 + 9, j * 18 + 8, i * 18 + 84));
+        for (int row = 0; row < 3; row++) {
+            for (int column = 0; column < 9; column++) {
+                int index = column + row * 9 + 9;
+                int xPos = column * 18 + 8;
+                int yPos = row * 18 + 84;
+                this.addSlotToContainer(new Slot(playerInventory, index, xPos, yPos));
             }
         }
-        for (int i = 0; i < 9; ++i) {
-            this.addSlotToContainer(new Slot(playerInventory, i, i * 18 + 8, 4 + 54 + 84));
+        for (int column = 0; column < 9; column++) {
+            int xPos = column * 18 + 8;
+            this.addSlotToContainer(new Slot(playerInventory, column, xPos, 142));
         }
     }
 
     @Override
     public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
-        Slot slot = this.inventorySlots.get(index);
+        Slot slot = inventorySlots.get(index);
         if (slot != null && slot.getHasStack()) {
             ItemStack itemstack1 = slot.getStack();
             itemstack = itemstack1.copy();
             if (index < 19) {
-                if (!this.mergeItemStack(itemstack1, 19, 18 + 4 * 9 + 1, true)) {
+                if (!mergeItemStack(itemstack1, 19, 18 + 4 * 9 + 1, true)) {
                     return ItemStack.EMPTY;
                 }
                 slot.onSlotChanged();
             }
-            else {
-                if (index < 19 + 9 * 3){
-                    if (!this.mergeItemStack(itemstack1, 0, 19, false)){
-                        return ItemStack.EMPTY;
-                    }
-                } else if (index < 55 && !this.mergeItemStack(itemstack1, 19, 18 + 9 * 3, false)){
+            else if (index < 19 + 9 * 3){
+                if (!mergeItemStack(itemstack1, 0, 19, false)){
+                    return ItemStack.EMPTY;
+                }
+            else if (!mergeItemStack(itemstack1, 19, 18 + 9 * 3, false)){
                     return ItemStack.EMPTY;
                 }
             }
