@@ -1,7 +1,5 @@
 package com.example.examplemod.block.tiles;
 
-import com.example.examplemod.dimensions.BlocksMinerVoidDimension;
-import com.example.examplemod.dimensions.ModDimensions;
 import com.example.examplemod.gui.BlocksMinerContainer;
 import com.example.examplemod.gui.BlocksMinerGui;
 import com.example.examplemod.utils.BlocksMinerFakePlayer;
@@ -9,46 +7,47 @@ import com.example.examplemod.utils.BlocksMinerUtils;
 import com.example.examplemod.utils.IGuiTile;
 import com.example.examplemod.utils.energy.ModEnergyStorage;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockDirectional;
-import net.minecraft.block.BlockDropper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.Enchantments;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.play.client.CPacketPlayerDigging;
+import net.minecraft.server.management.PlayerInteractionManager;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.world.WorldProvider;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
-import net.minecraft.world.storage.ISaveHandler;
-import net.minecraft.world.storage.WorldInfo;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.EnergyStorage;
-import org.lwjgl.Sys;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.UUID;
 
 public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISidedInventory, IGuiTile {
+
     //Публичные поля
     final static int REAL_ENERGY_CONSUMING = 10;
     public int energyConsuming = 0;
     public NonNullList<ItemStack> items = NonNullList.withSize(19, ItemStack.EMPTY);
     public float curBlockDamageMP = 0;
     public WeakReference<BlocksMinerFakePlayer> fakePlayer;
+
     //Приватные поля
     private final net.minecraftforge.common.capabilities.CapabilityDispatcher capabilities;
     private final ModEnergyStorage energyStorage = new ModEnergyStorage(20000, 200, REAL_ENERGY_CONSUMING);
@@ -80,6 +79,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             if (fakePlayer != null) {
                 if (freePosition == null) freePosition = BlocksMinerUtils.getValidPosForSpawn(pos, (WorldServer) fakePlayer.get().world);
                 fakePlayer.get().setPosition(freePosition.getX(), freePosition.getY(), freePosition.getZ());
+                setFakePlayerMainHandItem(items.get(0));
             }
             return;
         }
@@ -87,7 +87,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             freePosition = fakePlayer.get().getPosition();
         }
         //Ретерн, если нет блоков для копания
-        if (getFirstFullStackInRange(1, 7) == -1 && fakePlayer.get().world.getBlockState(freePosition).getBlock() == Blocks.AIR) {
+        if (getFirstFullStackInRange(1, 7) == -1 && fakePlayer.get().world.getBlockState(freePosition).getBlock() == Blocks.AIR && !startedMining) {
             curBlockDamageMP = 0;
             energyConsuming = 0;
             return;
@@ -102,7 +102,6 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             placeBlock();
         }
         targetBlock = fakePlayer.get().world.getBlockState(freePosition);
-
         //Добываем блок
         if ((curBlockDamageMP += targetBlock.getPlayerRelativeBlockHardness(fakePlayer.get(), fakePlayer.get().world, freePosition) * 5) >= 1.0F) {
             startedMining = false;
@@ -153,12 +152,12 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
 
     @Override
     public int getSizeInventory() {
-        return this.items.size();
+        return items.size();
     }
 
     @Override
-    public ItemStack getStackInSlot(final int s) {
-        return (s >= this.getSizeInventory()) ? ItemStack.EMPTY : this.items.get(s);
+    public ItemStack getStackInSlot(final int index) {
+        return items.get(index);
     }
 
     @Override
@@ -201,9 +200,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
 
     @Override
     public void setInventorySlotContents(final int index, final ItemStack stack) {
-        if (index < this.items.size()) {
-            this.items.set(index, stack);
-        }
+        items.set(index, stack);
         if (!world.isRemote && index == 0) setFakePlayerMainHandItem(stack);
     }
 
@@ -246,6 +243,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
 
     @Override
     public void clear() {
+        items = NonNullList.withSize(getSizeInventory(), ItemStack.EMPTY);
     }
 
     @Override
@@ -351,11 +349,11 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     public int getEnergyConsuming(){
-        return this.energyConsuming;
+        return energyConsuming;
     }
 
     public int getStoredEnergy(){
-        return this.energyStorage.getEnergyStored();
+        return energyStorage.getEnergyStored();
     }
 
     public int getClientIntData(int ID){
@@ -401,7 +399,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     private void placeBlock(){
-        fakePlayer.get().world.setBlockState(freePosition, ((ItemBlock)items.get(targetSlot).getItem()).getBlock().getStateForPlacement(fakePlayer.get().world, freePosition, EnumFacing.DOWN, freePosition.getX(), freePosition.getY(), freePosition.getZ(), 0, fakePlayer.get()));
+        fakePlayer.get().world.setBlockState(freePosition, ((ItemBlock)items.get(targetSlot).getItem()).getBlock().getStateFromMeta((items.get(targetSlot)).getMetadata()));
         ItemStack itemStack = getStackInSlot(targetSlot);
         itemStack.setCount(itemStack.getCount() - 1);
         setInventorySlotContents(targetSlot, itemStack);

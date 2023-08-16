@@ -48,23 +48,12 @@ public class ExampleMod
         }
         if (event.getHarvester().getGameProfile().getName().equals(ExampleMod.MODID + ".fake_player_blocks_miner")) {
             TileEntity tileEntity = DimensionManager.getWorld(((BlocksMinerFakePlayer) event.getHarvester()).tileWorldID).getTileEntity(((BlocksMinerFakePlayer) event.getHarvester()).tileBlockPos);
-            if (tileEntity instanceof BlocksMinerTileEntity){
-                for (ItemStack itemStack:event.getDrops()) {
+            if (tileEntity instanceof BlocksMinerTileEntity) {
+                for (ItemStack itemStack : event.getDrops()) {
                     ((BlocksMinerTileEntity) tileEntity).addItemStackToInventoryInRange(itemStack, 7, 19);
                 }
             }
             event.getDrops().clear();
-        }
-
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onHarvestDropsExp(final BlockEvent.BreakEvent event) {
-        if (event.getPlayer() == null) {
-            return;
-        }
-        if (event.getPlayer().getGameProfile().getName().equals(ExampleMod.MODID + ".fake_player_blocks_miner")) {
-            event.setExpToDrop(0);
         }
     }
 }
