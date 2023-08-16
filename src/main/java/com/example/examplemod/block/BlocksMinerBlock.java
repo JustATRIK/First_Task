@@ -24,7 +24,6 @@ import javax.annotation.Nullable;
 
 public class BlocksMinerBlock extends BlockContainer {
     public static final PropertyDirection FACING = BlockDirectional.FACING;
-
     public BlocksMinerBlock(String name, float hardness, float resistance, Material blockMaterialIn) {
         super(blockMaterialIn);
         this.setRegistryName(name);
@@ -33,64 +32,52 @@ public class BlocksMinerBlock extends BlockContainer {
         this.setResistance(resistance);
         this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
     }
-
     @Override
     public boolean hasTileEntity()
     {
         return true;
     }
-
     @Nullable
     @Override
     public TileEntity createNewTileEntity(World worldIn, int meta) {
         return new BlocksMinerTileEntity();
     }
-
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
         playerIn.openGui(ExampleMod.MODID, ModGui.BLOCKS_DESTROYER_GUI_ID, worldIn,pos.getX(), pos.getY(), pos.getZ());
         return true;
     }
-
     public Class<? extends TileEntity> getTileEntityClass() {
         return BlocksMinerTileEntity.class;
     }
-
     @Override
     public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
         BlocksMinerTileEntity tileEntity = (BlocksMinerTileEntity) worldIn.getTileEntity(pos);
-        if (tileEntity.fakePlayer.get() != null) BlocksMinerUtils.blockedPositions.remove(tileEntity.fakePlayer.get().getPosition());
+        if (tileEntity.fakePlayer != null && tileEntity.fakePlayer.get() != null) BlocksMinerUtils.blockedPositions.remove(tileEntity.fakePlayer.get().getPosition());
         super.breakBlock(worldIn, pos, state);
         for (ItemStack itemStack:tileEntity.items) {
             Block.spawnAsEntity(worldIn, pos, itemStack);
         }
     }
-
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
         return this.getDefaultState().withProperty(FACING, EnumFacing.getDirectionFromEntityLiving(pos, placer));
     }
-
     public EnumBlockRenderType getRenderType(IBlockState state) {
         return EnumBlockRenderType.MODEL;
     }
-
     public IBlockState getStateFromMeta(int meta) {
         return this.getDefaultState().withProperty(FACING, EnumFacing.byIndex(meta & 7));
     }
-
     public int getMetaFromState(IBlockState state) {
         int i = 0;
         i = i | state.getValue(FACING).getIndex();
         return i;
     }
-
     public IBlockState withRotation(IBlockState state, Rotation rot) {
         return state.withProperty(FACING, rot.rotate(state.getValue(FACING)));
     }
-
     public IBlockState withMirror(IBlockState state, Mirror mirrorIn) {
         return state.withRotation(mirrorIn.toRotation(state.getValue(FACING)));
     }
-
     protected BlockStateContainer createBlockState() {
         return new BlockStateContainer(this, new IProperty[] {FACING});
     }
