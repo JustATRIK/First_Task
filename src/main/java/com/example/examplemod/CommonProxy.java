@@ -13,7 +13,6 @@ public class CommonProxy
     public void preInit(FMLPreInitializationEvent event) {
         ModBlocks.register();
         ExampleMod.NETWORK.registerMessage(new EnergyAndProgressSyncPacket(), EnergyAndProgressSyncPacket.class, 0, Side.CLIENT);
-        ModDimensions.registerDimensions();
     }
 
     public void init(FMLInitializationEvent event) {
