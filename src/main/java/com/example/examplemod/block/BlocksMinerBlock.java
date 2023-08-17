@@ -3,7 +3,6 @@ package com.example.examplemod.block;
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
 import com.example.examplemod.gui.ModGui;
-import com.example.examplemod.utils.BlocksMinerUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockDirectional;
@@ -52,7 +51,6 @@ public class BlocksMinerBlock extends BlockContainer {
     @Override
     public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
         BlocksMinerTileEntity tileEntity = (BlocksMinerTileEntity) worldIn.getTileEntity(pos);
-        if (tileEntity.fakePlayer != null && tileEntity.fakePlayer.get() != null) BlocksMinerUtils.blockedPositions.remove(tileEntity.fakePlayer.get().getPosition());
         super.breakBlock(worldIn, pos, state);
         for (ItemStack itemStack:tileEntity.items) {
             Block.spawnAsEntity(worldIn, pos, itemStack);
