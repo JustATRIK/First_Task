@@ -14,37 +14,16 @@ import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import java.lang.ref.WeakReference;
 import java.util.UUID;
-
 public class BlocksMinerFakePlayer extends FakePlayer{
-    public int tileWorldID;
-    public BlockPos tileBlockPos;
 
-    public BlocksMinerFakePlayer(WorldServer world, GameProfile name, int tileWorldID, BlockPos tileBlockPos) {
+    public BlocksMinerFakePlayer(WorldServer world, GameProfile name) {
         super(world, name);
-        this.tileBlockPos = tileBlockPos;
-        this.tileWorldID = tileWorldID;
     }
 
-    @Override
-    public void readFromNBT(NBTTagCompound compound) {
-        tileWorldID = compound.getInteger("tilesWorldID");
-        tileBlockPos = new BlockPos(compound.getInteger("tileX"), compound.getInteger("tileY"), compound.getInteger("tileZ"));
-        super.readFromNBT(compound);
-    }
-
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-        compound.setInteger("tilesWorldID", tileWorldID);
-        compound.setInteger("tileX", tileBlockPos.getX());
-        compound.setInteger("tileY", tileBlockPos.getY());
-        compound.setInteger("tileZ", tileBlockPos.getZ());
-        return super.writeToNBT(compound);
-    }
-
-    public static WeakReference<BlocksMinerFakePlayer> initFakePlayer(final WorldServer world, final UUID uuid, final String blockName, int tilesWorldID, BlockPos blockPos) {
+    public static WeakReference<BlocksMinerFakePlayer> initFakePlayer(final WorldServer world, final UUID uuid, final String blockName) {
         WeakReference<BlocksMinerFakePlayer> fakePlayer;
         try {
-            fakePlayer = new WeakReference<BlocksMinerFakePlayer>(new BlocksMinerFakePlayer(world, new GameProfile(uuid, ExampleMod.MODID + ".fake_player_" + blockName), tilesWorldID, blockPos));
+            fakePlayer = new WeakReference<BlocksMinerFakePlayer>(new BlocksMinerFakePlayer(world, new GameProfile(uuid, ExampleMod.MODID + ".fake_player_" + blockName)));
         }
         catch (Exception e) {
             return null;
