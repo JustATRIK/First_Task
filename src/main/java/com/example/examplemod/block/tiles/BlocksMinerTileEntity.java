@@ -443,8 +443,11 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             itemsToDrop = (List<ItemStack>)getDropMethod.invoke(targetBlockState.getBlock(), fakePlayer.get().world, freePosition, targetBlockState, EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, getStackInSlot(0)));
         }
         getStackInSlot(0).damageItem(1, fakePlayer.get());
-        targetBlockState = Blocks.AIR.getDefaultState();
         net.minecraftforge.event.ForgeEventFactory.fireBlockHarvesting(itemsToDrop, fakePlayer.get().world, pos, targetBlockState, EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, getStackInSlot(0)), 1.0f, hasSilkTouch, fakePlayer.get());
+        targetBlockState = Blocks.AIR.getDefaultState();
+        for (ItemStack item: itemsToDrop) {
+            addItemStackToInventoryInRange(item, 7, 19);
+        }
     }
     
     private float getRealBlockHardness() {
