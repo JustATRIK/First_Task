@@ -6,6 +6,7 @@ import com.example.examplemod.utils.BlocksMinerFakePlayer;
 import com.example.examplemod.utils.IGuiTile;
 import com.example.examplemod.utils.energy.ModEnergyStorage;
 import net.minecraft.block.Block;
+import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -15,6 +16,7 @@ import net.minecraft.init.Enchantments;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.inventory.ItemStackHelper;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -34,6 +36,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -100,7 +103,7 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
             setTargetBlockState();
         }
         //Добываем блок
-        if ((curBlockDamageMP += 1 / (targetBlockState.getBlockHardness(world, pos) * 100) * getStackInSlot(0).getDestroySpeed(targetBlockState)) >= 1.0F) {
+        if ((curBlockDamageMP += getRealBlockHardness()) >= 1.0F) {
             startedMining = false;
             curBlockDamageMP = 0;
             energyConsuming = 0;
@@ -145,14 +148,27 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
         super.writeToNBT(compound);
         compound = ItemStackHelper.saveAllItems(compound, items);
         compound.setInteger("energy", energyStorage.getEnergyStored());
+        compound.setFloat("progress", curBlockDamageMP);
+        compound.setBoolean("startedMining", startedMining);
+        Block targetBlock = targetBlockState.getBlock();
+        ItemStack targetBlockAsIS = new ItemStack(Item.getItemFromBlock(targetBlock));
+        NBTTagCompound newNbt = new NBTTagCompound();
+        targetBlockAsIS.writeToNBT(newNbt);
+        compound.setTag("targetBlock", newNbt);
         return compound;
     }
 
     @Override
     public void readFromNBT(NBTTagCompound compound) {
         super.readFromNBT(compound);
-        ItemStackHelper.loadAllItems(compound, items);
         energyStorage.setEnergy(compound.getInteger("energy"));
+        curBlockDamageMP = compound.getFloat("progress");
+        startedMining = compound.getBoolean("startedMining");
+        try {
+            ItemStackHelper.loadAllItems(compound, items);
+            ItemStack targetBlockAsIS = new ItemStack((NBTTagCompound) compound.getTag("targetBlock"));
+            targetBlockState = ((ItemBlock) targetBlockAsIS.getItem()).getBlock().getStateFromMeta(targetBlockAsIS.getMetadata());
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -404,13 +420,14 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
     }
 
     private void setTargetBlockState() {
-        targetBlockState = ((ItemBlock)getStackInSlot(targetSlot).getItem()).getBlock().getStateFromMeta((items.get(targetSlot)).getMetadata());
         ItemStack itemStack = getStackInSlot(targetSlot);
+        targetBlockState = ((ItemBlock)itemStack.getItem()).getBlock().getStateFromMeta(getStackInSlot(targetSlot).getMetadata());
         itemStack.setCount(itemStack.getCount() - 1);
         setInventorySlotContents(targetSlot, itemStack);
     }
 
     private void mineBlock() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        if (!fakePlayer.get().canHarvestBlock(targetBlockState)) return;
         List<ItemStack> itemsToDrop = new ArrayList<>();
         itemsToDrop.add(ItemStack.EMPTY);
         boolean hasSilkTouch = EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, getStackInSlot(0)) != 0 ? true: false;
@@ -429,6 +446,22 @@ public class BlocksMinerTileEntity extends TileEntity implements ITickable, ISid
         targetBlockState = Blocks.AIR.getDefaultState();
         net.minecraftforge.event.ForgeEventFactory.fireBlockHarvesting(itemsToDrop, fakePlayer.get().world, pos, targetBlockState, EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, getStackInSlot(0)), 1.0f, hasSilkTouch, fakePlayer.get());
     }
+    
+    private float getRealBlockHardness() {
+        float blockHardness = targetBlockState.getBlockHardness(world, new BlockPos(0, 0, 0));
+        float miningSpeed = fakePlayer.get().inventory.getDestroySpeed(targetBlockState);
+        if (miningSpeed > 1.0F) {
+            int efficiencyModifier = EnchantmentHelper.getEfficiencyModifier(fakePlayer.get());
+            ItemStack itemstack = getStackInSlot(0);
+            if (efficiencyModifier > 0 && !itemstack.isEmpty()) {
+                miningSpeed += (float)(Math.pow(efficiencyModifier, 2) + 1);
+            }
+        }
+        return fakePlayer.get().canHarvestBlock(targetBlockState) ? miningSpeed / 30f / blockHardness : miningSpeed / 100f / blockHardness;
+    }
+
+    public ItemStack getTargetBlockAsIS() {
+        Block targetBlock = targetBlockState.getBlock();
+        return new ItemStack(Item.getItemFromBlock(targetBlock));
+    }
 }
-
-
