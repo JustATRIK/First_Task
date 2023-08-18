@@ -40,20 +40,4 @@ public class ExampleMod
         proxy.init(event);
         NetworkRegistry.INSTANCE.registerGuiHandler(this, new ModGui());
     }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onHarvestDrops(final BlockEvent.HarvestDropsEvent event) {
-        if (event.getHarvester() == null) {
-            return;
-        }
-        if (event.getHarvester().getGameProfile().getName().equals(ExampleMod.MODID + ".fake_player_blocks_miner")) {
-            TileEntity tileEntity = event.getWorld().getTileEntity(event.getHarvester().getPosition());
-            if (tileEntity instanceof BlocksMinerTileEntity) {
-                for (ItemStack itemStack : event.getDrops()) {
-                    ((BlocksMinerTileEntity) tileEntity).addItemStackToInventoryInRange(itemStack, 7, 19);
-                }
-            }
-            event.getDrops().clear();
-        }
-    }
 }
