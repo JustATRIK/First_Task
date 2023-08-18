@@ -1,7 +1,6 @@
 package com.example.examplemod;
 
 import com.example.examplemod.block.ModBlocks;
-import com.example.examplemod.dimensions.ModDimensions;
 import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
