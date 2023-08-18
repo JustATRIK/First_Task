@@ -55,6 +55,7 @@ public class BlocksMinerBlock extends BlockContainer {
         for (ItemStack itemStack:tileEntity.items) {
             Block.spawnAsEntity(worldIn, pos, itemStack);
         }
+        Block.spawnAsEntity(worldIn, pos, tileEntity.getTargetBlockAsIS());
     }
     public IBlockState getStateForPlacement(World worldIn, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer) {
         return this.getDefaultState().withProperty(FACING, EnumFacing.getDirectionFromEntityLiving(pos, placer));
