@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
 
 public class BlocksMinerBlock extends BlockContainer {
     public static final PropertyDirection FACING = BlockDirectional.FACING;
-    public BlocksMinerBlock(String name, float hardness, float resistance, Material blockMaterialIn) throws NoSuchMethodException {
+    public BlocksMinerBlock(String name, float hardness, float resistance, Material blockMaterialIn) {
         super(blockMaterialIn);
         this.setRegistryName(name);
         this.setTranslationKey("examplemod.blocks_miner");
