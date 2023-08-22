@@ -44,7 +44,6 @@ public class XPRemovePacket implements IMessage, IMessageHandler<XPRemovePacket,
         BlockPos blockPos = new BlockPos(message.x, message.y, message.z);
         TileEntity tileEntity = ctx.getServerHandler().player.world.getTileEntity(blockPos);
         if (tileEntity instanceof BlocksMinerTileEntity) {
-            System.out.println(((BlocksMinerTileEntity) tileEntity).storedXP);
             ctx.getServerHandler().player.addExperience(((BlocksMinerTileEntity) tileEntity).storedXP);
             ((BlocksMinerTileEntity) tileEntity).storedXP = 0;
         }
