@@ -2,6 +2,8 @@ package com.example.examplemod.gui;
 
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
+import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
+import com.example.examplemod.utils.packets.RequestToSyncPacket;
 import com.example.examplemod.utils.packets.XPRemovePacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -34,6 +36,7 @@ public class BlocksMinerGui extends GuiContainer {
 
     @Override
     public void initGui() {
+        ExampleMod.NETWORK.sendToServer(new RequestToSyncPacket(tileEntity.getPos()));
         x = (width - 176) / 2;
         y = (height - 166) / 2;
         addButton(new GuiButton(0, x + 122, y + 15, 18, 18, "XP"));

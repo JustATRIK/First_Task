@@ -1,11 +1,13 @@
 package com.example.examplemod.block.tiles;
 
 import com.example.examplemod.CommonProxy;
+import com.example.examplemod.ExampleMod;
 import com.example.examplemod.gui.BlocksMinerContainer;
 import com.example.examplemod.gui.BlocksMinerGui;
 import com.example.examplemod.utils.BlocksMinerFakePlayer;
 import com.example.examplemod.utils.IGuiTile;
 import com.example.examplemod.utils.energy.ModEnergyStorage;
+import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;

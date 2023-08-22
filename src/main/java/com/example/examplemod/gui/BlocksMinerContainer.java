@@ -102,13 +102,13 @@ public class BlocksMinerContainer extends Container {
     public void detectAndSendChanges() {
         super.detectAndSendChanges();
         if (!tileEntity.getWorld().isRemote) {
-            if (tileEntity.getStoredEnergy() != tileEntity.getClientIntData(0) || tileEntity.energyConsuming != tileEntity.getClientIntData(1) || tileEntity.curBlockDamageMP != tileEntity.getClientFloatData(0)) {
+            if (tileEntity.storedXP != tileEntity.getClientIntData(2) || tileEntity.getStoredEnergy() != tileEntity.getClientIntData(0) || tileEntity.energyConsuming != tileEntity.getClientIntData(1) || tileEntity.curBlockDamageMP != tileEntity.getClientFloatData(0)) {
                 tileEntity.setClientIntData(0, tileEntity.getStoredEnergy());
                 tileEntity.setClientIntData(1, tileEntity.energyConsuming);
                 tileEntity.setClientIntData(2, tileEntity.storedXP);
                 tileEntity.setClientFloatData(0, tileEntity.curBlockDamageMP);
+                ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming, tileEntity.storedXP));
             }
-            ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming, tileEntity.storedXP));
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.examplemod;
 
 import com.example.examplemod.block.ModBlocks;
 import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
+import com.example.examplemod.utils.packets.RequestToSyncPacket;
 import com.example.examplemod.utils.packets.XPRemovePacket;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -22,6 +23,7 @@ public class CommonProxy
     public void preInit(FMLPreInitializationEvent event) {
         ModBlocks.register();
         ExampleMod.NETWORK.registerMessage(new EnergyAndProgressSyncPacket(), EnergyAndProgressSyncPacket.class, 0, Side.CLIENT);
+        ExampleMod.NETWORK.registerMessage(new RequestToSyncPacket(), RequestToSyncPacket.class, 1, Side.SERVER);
         ExampleMod.NETWORK.registerMessage(new XPRemovePacket(), XPRemovePacket.class, 2, Side.SERVER);
     }
 
