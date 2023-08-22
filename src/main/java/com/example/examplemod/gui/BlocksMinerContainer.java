@@ -2,6 +2,9 @@ package com.example.examplemod.gui;
 
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
+import com.example.examplemod.gui.slots.OnlyBlockSlot;
+import com.example.examplemod.gui.slots.OnlyTakeSlot;
+import com.example.examplemod.gui.slots.OnlyToolSlot;
 import com.example.examplemod.utils.packets.EnergyAndProgressSyncPacket;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
@@ -9,19 +12,21 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
+import javax.annotation.Nullable;
+
 public class BlocksMinerContainer extends Container {
 
     BlocksMinerTileEntity tileEntity;
 
     public BlocksMinerContainer(EntityPlayer player, BlocksMinerTileEntity tileEntity) {
         this.tileEntity = tileEntity;
-        this.addSlotToContainer(new Slot(tileEntity, 0, 123, 38)); //1) index 2) xPos 3) yPos
+        this.addSlotToContainer(new OnlyToolSlot(tileEntity, 0, 123, 38)); //1) index 2) xPos 3) yPos
         //слоты для входа
         for (int column = 0; column < 6; column++) {
             int index = 1 + column;
             int xPos = column * 18 + 8;
             int yPos = 16;
-            this.addSlotToContainer(new Slot(tileEntity, index, xPos, yPos));
+            this.addSlotToContainer(new OnlyBlockSlot(tileEntity, index, xPos, yPos));
         }
         //слоты для выхода
         for (int row = 1; row < 3; row++) {
@@ -29,9 +34,10 @@ public class BlocksMinerContainer extends Container {
                 int index = row * 6 + 1 + column;
                 int xPos = column * 18 + 8;
                 int yPos = row * 18 + 20;
-                this.addSlotToContainer(new Slot(tileEntity, index, xPos, yPos));
+                this.addSlotToContainer(new OnlyTakeSlot(tileEntity, index, xPos, yPos));
             }
         }
+        this.addSlotToContainer(new OnlyTakeSlot(tileEntity, 19, 123, 56));
         initPlayerInventory(player);
     }
 
@@ -63,17 +69,17 @@ public class BlocksMinerContainer extends Container {
         if (slot != null && slot.getHasStack()) {
             ItemStack itemstack1 = slot.getStack();
             itemstack = itemstack1.copy();
-            if (index < 19) {
-                if (!mergeItemStack(itemstack1, 19, 18 + 4 * 9 + 1, true)) {
+            if (index < 20) {
+                if (!mergeItemStack(itemstack1, 20, 20 + 4 * 9, true)) {
                     return ItemStack.EMPTY;
                 }
                 slot.onSlotChanged();
             }
-            else if (index < 19 + 9 * 3){
-                if (!mergeItemStack(itemstack1, 0, 19, false)){
+            else {
+                if (index < 20 + 9 * 3 && !mergeItemStack(itemstack1, 0, 7, false)){
                     return ItemStack.EMPTY;
                 }
-            else if (!mergeItemStack(itemstack1, 19, 18 + 9 * 3, false)){
+                else if (!mergeItemStack(itemstack1, 0, 7, false)){
                     return ItemStack.EMPTY;
                 }
             }
@@ -91,6 +97,7 @@ public class BlocksMinerContainer extends Container {
         return itemstack;
     }
 
+
     @Override
     public void detectAndSendChanges() {
         super.detectAndSendChanges();
@@ -98,8 +105,9 @@ public class BlocksMinerContainer extends Container {
             if (tileEntity.getStoredEnergy() != tileEntity.getClientIntData(0) || tileEntity.energyConsuming != tileEntity.getClientIntData(1) || tileEntity.curBlockDamageMP != tileEntity.getClientFloatData(0)) {
                 tileEntity.setClientIntData(0, tileEntity.getStoredEnergy());
                 tileEntity.setClientIntData(1, tileEntity.energyConsuming);
+                tileEntity.setClientIntData(2, tileEntity.storedXP);
                 tileEntity.setClientFloatData(0, tileEntity.curBlockDamageMP);
-                ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming));
+                ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming, tileEntity.storedXP));
             }
         }
     }
