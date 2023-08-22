@@ -1,5 +1,6 @@
 package com.example.examplemod.block;
 
+import com.example.examplemod.CommonProxy;
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.block.tiles.BlocksMinerTileEntity;
 import com.example.examplemod.gui.ModGui;
@@ -23,13 +24,14 @@ import javax.annotation.Nullable;
 
 public class BlocksMinerBlock extends BlockContainer {
     public static final PropertyDirection FACING = BlockDirectional.FACING;
-    public BlocksMinerBlock(String name, float hardness, float resistance, Material blockMaterialIn) {
+    public BlocksMinerBlock(String name, float hardness, float resistance, Material blockMaterialIn) throws NoSuchMethodException {
         super(blockMaterialIn);
         this.setRegistryName(name);
         this.setTranslationKey("examplemod.blocks_miner");
         this.setHardness(hardness);
         this.setResistance(resistance);
         this.setDefaultState(this.blockState.getBaseState().withProperty(FACING, EnumFacing.NORTH));
+        this.setHarvestLevel("pickaxe", 1);
     }
     @Override
     public boolean hasTileEntity()
