@@ -12,19 +12,20 @@ import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
 
 public class EnergyAndProgressSyncPacket implements IMessage, IMessageHandler<EnergyAndProgressSyncPacket, IMessage> {
 
-    int x, y, z, energy, energyConsuming = 0;
+    int x, y, z, energy, energyConsuming, xpStored = 0;
     float progress;
 
     public EnergyAndProgressSyncPacket() {
     }
 
-    public EnergyAndProgressSyncPacket(BlockPos blockPos, int energy, float progress, int energyConsuming) {
+    public EnergyAndProgressSyncPacket(BlockPos blockPos, int energy, float progress, int energyConsuming, int xpStored) {
         x = blockPos.getX();
         y = blockPos.getY();
         z = blockPos.getZ();
         this.progress = progress;
         this.energy = energy;
         this.energyConsuming = energyConsuming;
+        this.xpStored = xpStored;
     }
 
     @Override
@@ -35,6 +36,7 @@ public class EnergyAndProgressSyncPacket implements IMessage, IMessageHandler<En
         energy = buf.readInt();
         progress = buf.readFloat();
         energyConsuming = buf.readInt();
+        xpStored = buf.readInt();
     }
 
     @Override
@@ -45,6 +47,7 @@ public class EnergyAndProgressSyncPacket implements IMessage, IMessageHandler<En
         buf.writeInt(energy);
         buf.writeFloat(progress);
         buf.writeInt(energyConsuming);
+        buf.writeInt(xpStored);
     }
 
     @Override
@@ -55,6 +58,7 @@ public class EnergyAndProgressSyncPacket implements IMessage, IMessageHandler<En
         if (tileEntity instanceof BlocksMinerTileEntity && ((BlocksMinerGui)Minecraft.getMinecraft().currentScreen).tileEntity == tileEntity){
             ((BlocksMinerTileEntity) tileEntity).setClientIntData(0, message.energy);
             ((BlocksMinerTileEntity) tileEntity).setClientIntData(1, message.energyConsuming);
+            ((BlocksMinerTileEntity) tileEntity).setClientIntData(2, message.xpStored);
             ((BlocksMinerTileEntity) tileEntity).setClientFloatData(0, message.progress);
         }
         return null;
