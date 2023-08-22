@@ -107,8 +107,8 @@ public class BlocksMinerContainer extends Container {
                 tileEntity.setClientIntData(1, tileEntity.energyConsuming);
                 tileEntity.setClientIntData(2, tileEntity.storedXP);
                 tileEntity.setClientFloatData(0, tileEntity.curBlockDamageMP);
-                ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming, tileEntity.storedXP));
             }
+            ExampleMod.NETWORK.sendToAll(new EnergyAndProgressSyncPacket(tileEntity.getPos(), tileEntity.getStoredEnergy(), tileEntity.curBlockDamageMP, tileEntity.energyConsuming, tileEntity.storedXP));
         }
     }
 }
