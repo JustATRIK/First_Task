@@ -17,7 +17,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 @Mod.EventBusSubscriber(modid = ExampleMod.MODID)
 public class ModBlocks {
 
-    public static final Block BLOCKS_DESTROYER_BLOCK = new BlocksMinerBlock("blocks_miner", 5.0F, 5.0F, Material.ROCK).setCreativeTab(CreativeTabs.REDSTONE);
+    public static final Block BLOCKS_DESTROYER_BLOCK  = new BlocksMinerBlock("blocks_miner", 5.0F, 5.0F, Material.ROCK).setCreativeTab(CreativeTabs.REDSTONE);
 
     public static void register() {
         setBlockRegister(BLOCKS_DESTROYER_BLOCK);
